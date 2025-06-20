@@ -2,13 +2,13 @@ version: 0.2
 
 env:
   variables:
-    REGION: "us-east-1"
-    ACCOUNT_ID: "026090546401"
-    REPO_NAME: "ecommerce-flask"
-    CLUSTER_NAME: "ecommerce-cluster"
-    SONAR_PROJECT_KEY: "E-commerce"
-    SONAR_HOST_URL: "http://3.87.198.49"
-    SONAR_TOKEN: "sqp_03cf9b6a7c2243b636278204866434d8a5ff8337"
+    REGION: us-east-1
+    ACCOUNT_ID: 026090546401
+    REPO_NAME: ecommerce-flask
+    CLUSTER_NAME: ecommerce-cluster
+    SONAR_PROJECT_KEY: E-commerce
+    SONAR_HOST_URL: http://3.87.198.49
+    SONAR_TOKEN: sqp_03cf9b6a7c2243b636278204866434d8a5ff8337
 
 phases:
   install:
