@@ -30,4 +30,3 @@ artifacts:
   files:
     - k8s/*
     - buildspec.yml
-
