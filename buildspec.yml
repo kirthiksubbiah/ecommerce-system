@@ -21,9 +21,8 @@ phases:
       - echo "Build completed on $(date)"
       - docker push "$REPO_URI:$IMAGE_TAG"
       - docker push "$REPO_URI:latest"
-      - echo "Writing image tag to deployment file..."
+      - echo "Updating Kubernetes deployment..."
       - sed -i "s|image: .*|image: $REPO_URI:$IMAGE_TAG|" k8s/deployment.yaml
-      - echo "Applying to EKS..."
       - aws eks update-kubeconfig --region us-east-1 --name ecommerce-cluster
       - kubectl apply -f k8s/
 
@@ -31,3 +30,4 @@ artifacts:
   files:
     - k8s/*
     - buildspec.yml
+
