@@ -2,19 +2,19 @@ version: 0.2
 
 env:
   variables:
-    SONAR_PROJECT_KEY: E-commerce
-    SONAR_HOST_URL: http://3.87.198.49
-    SONAR_TOKEN: sqp_03cf9b6a7c2243b636278204866434d8a5ff8337
-    REGION: us-east-1
-    ACCOUNT_ID: 026090546401
-    REPO_NAME: ecommerce-flask
+    SONAR_PROJECT_KEY: "E-commerce"
+    SONAR_HOST_URL: "http://3.87.198.49"
+    SONAR_TOKEN: "sqp_03cf9b6a7c2243b636278204866434d8a5ff8337"
+    REGION: "us-east-1"
+    ACCOUNT_ID: "026090546401"
+    REPO_NAME: "ecommerce-flask"
 
 phases:
   install:
     commands:
-      - echo Installing Node.js dependencies...
+      - echo "Installing Node.js dependencies..."
       - npm install || true
-      - echo Installing SonarScanner CLI...
+      - echo "Installing SonarScanner CLI..."
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
       - unzip sonar-scanner.zip
       - mv sonar-scanner-* sonar-scanner
@@ -22,29 +22,29 @@ phases:
 
   pre_build:
     commands:
-      - echo Adding SonarScanner to PATH...
+      - echo "Adding SonarScanner to PATH..."
       - export PATH=$PATH:$(pwd)/sonar-scanner/bin
-      - echo Running SonarQube analysis...
+      - echo "Running SonarQube analysis..."
       - sonar-scanner -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.sources=. -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
-      - echo Logging in to Amazon ECR...
+      - echo "Logging in to Amazon ECR..."
       - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - echo Image Tag: $IMAGE_TAG
+      - echo "Image Tag: $IMAGE_TAG"
       - REPO_URI=${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${REPO_NAME}
 
   build:
     commands:
-      - echo Build started on $(date)
+      - echo "Build started on $(date)"
       - docker build -t ${REPO_URI}:${IMAGE_TAG} .
       - docker tag ${REPO_URI}:${IMAGE_TAG} ${REPO_URI}:latest
 
   post_build:
     commands:
-      - echo Build completed on $(date)
+      - echo "Build completed on $(date)"
       - docker push ${REPO_URI}:${IMAGE_TAG}
       - docker push ${REPO_URI}:latest
-      - echo Updating Kubernetes deployment...
-      - sed -i "s|image: .*|image: ${REPO_URI}:${IMAGE_TAG}|" k8s/deployment.yaml
+      - echo "Updating Kubernetes deployment..."
+      - 'sed -i "s|image: .*|image: ${REPO_URI}:${IMAGE_TAG}|" k8s/deployment.yaml'
       - aws eks update-kubeconfig --region $REGION --name ecommerce-cluster
       - kubectl apply -f k8s/
 
