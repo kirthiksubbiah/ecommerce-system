@@ -3,9 +3,8 @@ version: 0.2
 phases:
   pre_build:
     commands:
-      - echo Logging in to Amazon ECR...
+      - echo "Logging in to Amazon ECR..."
       - aws --version
-      - echo Logging into ECR...
       - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 026090546401.dkr.ecr.us-east-1.amazonaws.com
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - echo "Image Tag: $IMAGE_TAG"
@@ -13,18 +12,18 @@ phases:
 
   build:
     commands:
-      - echo Build started on `date`
-      - docker build -t $REPO_URI:$IMAGE_TAG .
-      - docker tag $REPO_URI:$IMAGE_TAG $REPO_URI:latest
+      - echo "Build started on $(date)"
+      - docker build -t "$REPO_URI:$IMAGE_TAG" .
+      - docker tag "$REPO_URI:$IMAGE_TAG" "$REPO_URI:latest"
 
   post_build:
     commands:
-      - echo Build completed on `date`
-      - docker push $REPO_URI:$IMAGE_TAG
-      - docker push $REPO_URI:latest
-      - echo Updating Kubernetes deployment YAML with new image tag...
+      - echo "Build completed on $(date)"
+      - docker push "$REPO_URI:$IMAGE_TAG"
+      - docker push "$REPO_URI:latest"
+      - echo "Writing image tag to deployment file..."
       - sed -i "s|image: .*|image: $REPO_URI:$IMAGE_TAG|" k8s/deployment.yaml
-      - echo Updating EKS config and applying manifests...
+      - echo "Applying to EKS..."
       - aws eks update-kubeconfig --region us-east-1 --name ecommerce-cluster
       - kubectl apply -f k8s/
 
