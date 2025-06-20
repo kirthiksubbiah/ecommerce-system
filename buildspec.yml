@@ -6,13 +6,16 @@ env:
     ACCOUNT_ID: "026090546401"
     REPO_NAME: "ecommerce-flask"
     CLUSTER_NAME: "ecommerce-cluster"
+    SONAR_PROJECT_KEY: "E-commerce"
+    SONAR_HOST_URL: "http://3.87.198.49"
+    SONAR_TOKEN: "sqp_03cf9b6a7c2243b636278204866434d8a5ff8337"
 
 phases:
   install:
     commands:
-      - echo "Installing Node.js dependencies..."
+      - echo "Installing dependencies..."
       - npm install || true
-      - echo "Installing SonarScanner CLI..."
+      - echo "Installing SonarScanner..."
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
       - unzip sonar-scanner.zip
       - mv sonar-scanner-* sonar-scanner
@@ -21,15 +24,9 @@ phases:
   pre_build:
     commands:
       - echo "Running SonarQube analysis..."
-      - >
-        sonar-scanner -Dsonar.projectKey=E-commerce
-        -Dsonar.sources=.
-        -Dsonar.host.url=http://3.87.198.49
-        -Dsonar.login=sqp_03cf9b6a7c2243b636278204866434d8a5ff8337
-      - echo "Logging in to Amazon ECR..."
-      - >
-        aws ecr get-login-password --region $REGION |
-        docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
+      - sonar-scanner -Dsonar.projectKey=${SONAR_PROJECT_KEY} -Dsonar.sources=. -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_TOKEN}
+      - echo "Logging into Amazon ECR..."
+      - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - echo "Image Tag: $IMAGE_TAG"
       - REPO_URI=${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${REPO_NAME}
@@ -46,7 +43,7 @@ phases:
       - docker push ${REPO_URI}:${IMAGE_TAG}
       - docker push ${REPO_URI}:latest
       - echo "Updating Kubernetes deployment..."
-      - "sed -i 's|image: .*|image: ${REPO_URI}:${IMAGE_TAG}|' k8s/deployment.yaml"
+      - sed -i "s|image: .*|image: ${REPO_URI}:${IMAGE_TAG}|" k8s/deployment.yaml
       - aws eks update-kubeconfig --region $REGION --name $CLUSTER_NAME
       - kubectl apply -f k8s/
 
