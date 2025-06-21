@@ -1,36 +1,57 @@
 version: 0.2
- 
+
 phases:
   pre_build:
     commands:
       - echo "Logging in to Amazon ECR..."
       - aws --version
-      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 026090546401.dkr.ecr.us-east-1.amazonaws.com
-      - 'IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)'
-      - 'echo "Image Tag: $IMAGE_TAG"'
-      - 'REPO_URI=026090546401.dkr.ecr.us-east-1.amazonaws.com/ecommerce-flask'
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --username AWS --password-stdin 026090546401.dkr.ecr.us-east-1.amazonaws.com
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - echo "Image Tag: $IMAGE_TAG"
+      - REPO_URI=026090546401.dkr.ecr.us-east-1.amazonaws.com/ecommerce-flask
+      # SonarQube scanner setup
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
       - unzip -q sonar-scanner.zip
       - export PATH=$PATH:$(pwd)/sonar-scanner-4.8.0.2856-linux/bin
- 
+
   build:
     commands:
-      - echo Running SonarQube Analysis on EC2-hosted SonarQube...
+      # 1. Address SonarQube connectivity BEFORE proceeding with the build
+      #    This is a critical external dependency.
+      #    You need to ensure your CodeBuild environment has network access to 3.87.198.49 on port 80.
+      #    This typically involves:
+      #    - CodeBuild project's VPC configuration (if it's in a VPC)
+      #    - Security Groups associated with the CodeBuild project's ENI
+      #    - Network ACLs (if applicable)
+      #    - Security Group of the SonarQube EC2 instance to allow inbound from CodeBuild's IP range/security group.
+      #    - Public IP address accessibility for SonarQube if CodeBuild is not in the same VPC or peered.
+
+      - echo "Running SonarQube Analysis..."
+      # Add `set +e` to allow the SonarQube command to fail without stopping the entire build phase.
+      # This is often done if SonarQube analysis is a "nice to have" but not a "must have" for the build itself.
+      # If SonarQube analysis *must* succeed for the build to continue, remove `set +e` and keep the current logic.
+      # For now, I'm assuming you want the build to continue even if SonarQube fails, but you should verify connectivity.
+      - set +e
       - sonar-scanner -Dsonar.projectKey=E-commerce -Dsonar.sources=. -Dsonar.host.url=http://3.87.198.49 -Dsonar.login=sqp_03cf9b6a7c2243b636278204866434d8a5ff8337
-      - 'echo "Build started on $(date)"'
-      - 'docker build -t ${REPO_URI}:${IMAGE_TAG} .'
-      - 'docker tag ${REPO_URI}:${IMAGE_TAG} ${REPO_URI}:latest'
- 
+      - set -e # Re-enable error exiting for subsequent commands
+
+      - echo "Build started on $(date)"
+      # Docker build commands must be in the BUILD phase
+      - docker build -t ${REPO_URI}:${IMAGE_TAG} .
+      - docker tag ${REPO_URI}:${IMAGE_TAG} ${REPO_URI}:latest
+
   post_build:
     commands:
-      - 'echo "Build completed on $(date)"'
-      - 'docker push ${REPO_URI}:${IMAGE_TAG}'
-      - 'docker push ${REPO_URI}:latest'
-      - 'echo "Updating Kubernetes deployment..."'
-      - 'sed -i "s|image: .*|image: ${REPO_URI}:${IMAGE_TAG}|" k8s/deployment.yaml'
-      - 'aws eks update-kubeconfig --region us-east-1 --name ecommerce-cluster'
-      - 'kubectl apply -f k8s/'
- 
+      - echo "Build completed on $(date)"
+      # Docker push commands are correctly placed here
+      - docker push ${REPO_URI}:${IMAGE_TAG}
+      - docker push ${REPO_URI}:latest
+      - echo "Updating Kubernetes deployment..."
+      # Ensure k8s/deployment.yaml exists and is being picked up by artifacts
+      - sed -i "s|image: .*|image: ${REPO_URI}:${IMAGE_TAG}|" k8s/deployment.yaml
+      - aws eks update-kubeconfig --region us-east-1 --name ecommerce-cluster
+      - kubectl apply -f k8s/
+
 artifacts:
   files:
     - k8s/*
