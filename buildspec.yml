@@ -11,6 +11,11 @@ phases:
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
       - unzip -q sonar-scanner.zip
       - export PATH=$PATH:$(pwd)/sonar-scanner-4.8.0.2856-linux/bin
+      - echo Installing Trivy...
+      - wget https://github.com/aquasecurity/trivy/releases/download/v0.63.0/trivy_0.63.0_Linux-64bit.tar.gz
+      - tar -zxvf trivy_0.63.0_Linux-64bit.tar.gz
+      - mv trivy /usr/local/bin/
+ 
   build:
     commands:
       - echo Running SonarQube Analysis on EC2-hosted SonarQube...
@@ -18,11 +23,14 @@ phases:
       - 'echo "Build started on $(date)"'
       - 'docker build -t ${REPO_URI}:${IMAGE_TAG} .'
       - 'docker tag ${REPO_URI}:${IMAGE_TAG} ${REPO_URI}:latest'
+      
   post_build:
     commands:
       - 'echo "Build completed on $(date)"'
       - 'docker push ${REPO_URI}:${IMAGE_TAG}'
       - 'docker push ${REPO_URI}:latest'
+      - echo Scanning image with Trivy...
+      - trivy image ${REPO_URI}:latest --severity CRITICAL,HIGH || true
       - 'echo "Updating Kubernetes deployment..."'
       - 'sed -i "s|image: .*|image: ${REPO_URI}:${IMAGE_TAG}|" k8s/deployment.yaml'
       - 'aws eks update-kubeconfig --region us-east-1 --name ecommerce-cluster'
