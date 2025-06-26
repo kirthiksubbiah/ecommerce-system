@@ -1,89 +1,51 @@
-<h1 align=center>E-Commerce Website</h1>
+# 🛒 E-Commerce Microservice Capstone Project
 
-Simple e-commerce website built with Flask and SQLite. Allows users to register, login, and purchase items. Also has an admin panel that allows administrators to view and manage users and items.
-
-<h2 align=center>Go to the website<br>https://e-commerce2023.onrender.com</h2>
-
-### Dependencies
-- Flask >= 2.2.5
-- SQLAlchemy >= 2.0.21
-- Flask-WTF >= 1.1.1
-- WTForms >= 3.0.1
-- Flask-Bcrypt >= 1.0.1
-- Flask-Login >= 0.6.2
-- gunicorn >= 21.2.0
+This project is a cloud-native, multi-region **e-commerce application** built using microservices architecture. The backend (Product & Order services) is developed in **Flask**, the frontend in **ReactJS**, and the entire stack is deployed on **Amazon EKS**. The infrastructure is provisioned across **two AWS regions** using **CloudFormation** and **Terraform**, while **CI/CD pipelines** and **Route 53 DNS failover** ensure automated deployments and high availability. Monitoring and alerts are powered by **CloudWatch**, **SNS**, **Prometheus**, and **Grafana**.
 
 ---
 
-### Installation
-#### 1. Clone the repository.
-> ```
-> git clone https://github.com/ahmednasser1601/e-commerce.git
-> ```
+## 📌 Project Goals
 
-#### 2. Install the dependencies.
-> ```
-> pip install -r requirements.txt
-> ```
-
-#### 3. Create a database.
-> ```
-> sqlite3 e-commerce.db
-> ```
-
-#### 4. Create the tables.
-> ```
-> CREATE TABLE users (
->     id INTEGER PRIMARY KEY AUTOINCREMENT,
->     username TEXT UNIQUE NOT NULL,
->     email_address TEXT UNIQUE NOT NULL,
->     password_hash TEXT NOT NULL,
->     budget INTEGER NOT NULL DEFAULT 10000
-> );
->
-> CREATE TABLE items (
->     id INTEGER PRIMARY KEY AUTOINCREMENT,
->     name TEXT UNIQUE NOT NULL,
->     barcode TEXT UNIQUE NOT NULL,
->     price INTEGER NOT NULL,
->     description TEXT NOT NULL,
->     owner INTEGER REFERENCES users (id)
-> );
-> ```
-
-#### 5. Run the website.
-> ```
-> python main.py
-> ```
+- 🚀 Deploy a containerized e-commerce application (Product, Order, Frontend) on **Amazon EKS**
+- ⚙️ Automate infrastructure setup using **Terraform** (Region B) and **CloudFormation** (Region A)
+- 📦 Implement **CI/CD** using AWS CodePipeline and CodeBuild
+- 🌍 Setup multi-region failover using **Amazon Route 53**
+- 📊 Monitor infrastructure and application using **CloudWatch**, **Prometheus**, **Grafana**
 
 ---
 
-### Usage
-> Register for an account.
+## ⚙️ Architecture Components
 
-> Login to your account.
+| Component         | Tool / Service                    | Description                                           |
+|------------------|------------------------------------|-------------------------------------------------------|
+| Application Layer| EKS + Docker                       | Product, Order, and Frontend microservices           |
+| CI/CD            | AWS CodePipeline, CodeBuild        | Automates image builds, scans, and deployments       |
+| Infra (Region A) | AWS CloudFormation                 | VPC, EKS, RDS, ALB setup in us-east-1                |
+| Infra (Region B) | Terraform                          | Infra replica setup in us-west-2                     |
+| GitOps           | Argo CD                            | Auto-sync apps from GitHub to EKS                    |
+| Monitoring       | CloudWatch, Prometheus, Grafana    | Logs, metrics, dashboards, and alerts                |
+| Security         | Trivy, SonarQube                   | Image scanning and static code analysis              |
+| DNS Failover     | Amazon Route 53                    | Health checks and multi-region failover              |
 
-> Browse the items for sale.
+region A - https://github.com/kirthiksubbiah/ecommerce-system.git
 
-> Add items to your cart.
-
-> Checkout and pay for your items.
-
----
-
-### Admin Panel
-The admin panel allows administrators to view and manage users and items. It also has two tabs: "Control Users" and "Control Items" to easily view and manage.
-  * Username: admin
-  * Password: admin
-
----
-
-### Conclusion
-This is a simple e-commerce website built with Flask and SQLite. The website is easy to use and can be customized to meet your needs.
+region B - https://github.com/kirthiksubbiah/ecommerce-system-terraform-.git
 
 ---
 
-### License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 🔧 Tools Used
+
+- **Amazon EKS** – Kubernetes orchestration  
+- **AWS ECR** – Docker image registry  
+- **Docker** – Containerization of services  
+- **Kubernetes** – Pod and service management  
+- **AWS CodePipeline / CodeBuild** – CI/CD automation  
+- **ArgoCD** – GitOps deployment for Kubernetes  
+- **Trivy** – Container image vulnerability scanner  
+- **SonarQube** – Code quality analysis  
+- **Terraform** – Infra-as-code (Region B)  
+- **CloudFormation** – Infra-as-code (Region A)  
+- **Route 53** – DNS-based failover  
+- **CloudWatch, Prometheus, Grafana** – Monitoring  
 
 ---
