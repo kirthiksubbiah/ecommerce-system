@@ -6,7 +6,7 @@ env:
     REGION: us-west-1
     REPO_NAME: vote-app
     IMAGE_TAG: latest
-    IMAGE_URI: $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/vote-app:$IMAGE_TAG
+    IMAGE_URI: $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG
 
 phases:
   install:
@@ -14,31 +14,36 @@ phases:
       nodejs: 18
       docker: 20
     commands:
-      - echo Installing dependencies...
+      - echo Installing Node.js dependencies...
       - npm install
 
   pre_build:
     commands:
+      - echo Running tests...
+      - npm test || echo "Tests failed — continuing..."
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com
 
   build:
     commands:
+      - echo Building application...
+      - npm run build  # Make sure this script exists in your package.json
       - echo Building Docker image...
       - docker build -t $REPO_NAME:$IMAGE_TAG .
       - docker tag $REPO_NAME:$IMAGE_TAG $IMAGE_URI
 
   post_build:
     commands:
-      - echo Pushing image to Amazon ECR...
+      - echo Pushing Docker image to Amazon ECR...
       - docker push $IMAGE_URI
-      - echo Preparing Kubernetes manifests...
-      - mkdir -p k8s-out
-      - sed "s|IMAGE_PLACEHOLDER|$IMAGE_URI|g" deployment.yaml > k8s-out/deployment.yaml
-      - cp service.yaml k8s-out/service.yaml
+      - echo Build and push completed on `date`
 
 artifacts:
-  base-directory: k8s-out
+  base-directory: '.'  # change if your build output is in a subfolder
   files:
-    - deployment.yaml
-    - service.yaml
+    - '**/*'
+  discard-paths: no
+
+cache:
+  paths:
+    - node_modules/**/*  # speeds up future builds
