@@ -1,0 +1,29 @@
+eksctl create cluster --name eks-cluster-1 --region us-east-1 --nodegroup-name eks-nodes1 --node-type t3.medium --nodes 1 --nodes-min 1 --nodes-max 2 --managed
+
+ 
+aws eks update-kubeconfig --name eks-cluster-1 --region us-east-1
+
+
+#########################################################################################################
+
+1. git clone the test repo
+2. cd expense_tracker
+3. aws configure
+4. git remote rename origin GitHub
+5. git remote add origin codecommit url
+6. git push origin --all
+7. username: git credentials username and password
+
+################################################################################################################
+
+module "vpc"{
+	source= "hcptf/vpc/aws"
+	version= "1.0.2"
+}
+
+##################################################################################################################
+
+module "ec2"{
+	source= "hcptf/ec2/aws"
+	version= "1.0.0"
+}
