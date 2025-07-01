@@ -1,0 +1,53 @@
+provider "aws" {
+  region = "us-west-1"
+}
+
+resource "aws_security_group" "ec2_sg" {
+  name        = "ec2-hardcoded-sg"
+  description = "Allow SSH"
+  vpc_id      = "vpc-0a1b2c3d4e5f67890"  # <-- Replace with your actual VPC ID
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "my_ec2" {
+  ami           = "ami-0c02fb55956c7d316"  # Amazon Linux 2 (us-west-1)
+  instance_type = "t2.micro"
+  key_name      = "my-ssh-key"             # <-- Replace with your EC2 key pair name
+
+  subnet_id              = "subnet-0123456789abcdef0"  # <-- Replace with your subnet ID
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+
+  tags = {
+    Name = "MyHardcodedEC2"
+  }
+}
+
+
+##############################
+
+provider "aws" {
+  region = "us-west-1"
+}
+
+resource "aws_instance" "example" {
+  ami           = "ami-0c55b159cbfafe1f0"  # Ubuntu AMI in us-west-1, change per region
+  instance_type = "t2.micro"
+  key_name      = "my-key"                # Replace with your key
+
+  tags = {
+    Name = "Terraform-EC2"
+  }
+}
