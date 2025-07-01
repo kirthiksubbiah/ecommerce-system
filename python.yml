@@ -1,0 +1,43 @@
+version: 0.2
+ 
+env:
+  variables:
+    ACCOUNT_ID: 557690580165
+    REGION: us-west-1
+    REPO_NAME: python-app
+    IMAGE_TAG: latest
+    IMAGE_URI: $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/python-app:$IMAGE_TAG
+ 
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+      docker: 20
+    commands:
+      - echo Installing dependencies...
+      - pip install -r requirements.txt || true  # if applicable
+ 
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com
+ 
+  build:
+    commands:
+      - echo Building Docker image...
+      - docker build -t $REPO_NAME:$IMAGE_TAG .
+      - docker tag $REPO_NAME:$IMAGE_TAG $IMAGE_URI
+ 
+  post_build:
+    commands:
+      - echo Pushing image to Amazon ECR...
+      - docker push $IMAGE_URI
+      - mkdir -p k8s-out
+      - sed "s|IMAGE_PLACEHOLDER|$IMAGE_URI|g" deployment.yaml > k8s-out/deployment.yaml
+      - cp service.yaml k8s-out/service.yaml
+ 
+artifacts:
+  base-directory: k8s-out
+  files:
+    - deployment.yaml
+    - service.yaml
