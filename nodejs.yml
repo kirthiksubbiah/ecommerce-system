@@ -32,10 +32,14 @@ phases:
       - docker build -t $REPO_NAME:$IMAGE_TAG .
       - docker tag $REPO_NAME:$IMAGE_TAG $IMAGE_URI
 
+
   post_build:
     commands:
       - echo Pushing image to Amazon ECR...
       - docker push $IMAGE_URI
+      - sed "s|IMAGE_PLACEHOLDER|$IMAGE_URI|g" deployment.yaml > k8s-out/deployment.yaml
+      - cp service.yaml k8s-out/service.yaml
+      - echo Build and packaging completed.
 
 artifacts:
   files:
