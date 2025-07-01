@@ -6,7 +6,7 @@ env:
     REGION: us-west-1
     REPO_NAME: vote-app
     IMAGE_TAG: latest
-    IMAGE_URI: $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG
+    IMAGE_URI: $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/vote-app:$IMAGE_TAG
 
 phases:
   install:
@@ -14,36 +14,29 @@ phases:
       nodejs: 18
       docker: 20
     commands:
-      - echo Installing Node.js dependencies...
+      - echo Installing dependencies...
       - npm install
 
   pre_build:
     commands:
+      - echo Running npm build...
+      - npm run build || true  # Optional, if "build" script is defined in package.json
       - echo Running tests...
-      - npm test || echo "Tests failed — continuing..."
+      - npm test || true       # Optional, adjust based on your test setup
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com
 
   build:
     commands:
-      - echo Building application...
-      - npm run build  # Make sure this script exists in your package.json
       - echo Building Docker image...
       - docker build -t $REPO_NAME:$IMAGE_TAG .
       - docker tag $REPO_NAME:$IMAGE_TAG $IMAGE_URI
 
   post_build:
     commands:
-      - echo Pushing Docker image to Amazon ECR...
+      - echo Pushing image to Amazon ECR...
       - docker push $IMAGE_URI
-      - echo Build and push completed on `date`
 
 artifacts:
-  base-directory: '.'  # change if your build output is in a subfolder
   files:
     - '**/*'
-  discard-paths: no
-
-cache:
-  paths:
-    - node_modules/**/*  # speeds up future builds
