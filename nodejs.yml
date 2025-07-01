@@ -20,9 +20,9 @@ phases:
   pre_build:
     commands:
       - echo Running npm build...
-      - npm run build || true  # Optional, if "build" script is defined in package.json
+      - npm run build || true  
       - echo Running tests...
-      - npm test || true       # Optional, adjust based on your test setup
+      - npm test || true       
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com
 
@@ -32,11 +32,11 @@ phases:
       - docker build -t $REPO_NAME:$IMAGE_TAG .
       - docker tag $REPO_NAME:$IMAGE_TAG $IMAGE_URI
 
-
   post_build:
     commands:
       - echo Pushing image to Amazon ECR...
       - docker push $IMAGE_URI
+      - mkdir -p k8s-out
       - sed "s|IMAGE_PLACEHOLDER|$IMAGE_URI|g" deployment.yaml > k8s-out/deployment.yaml
       - cp service.yaml k8s-out/service.yaml
       - echo Build and packaging completed.
